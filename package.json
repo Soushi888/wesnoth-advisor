@@ -1,0 +1,19 @@
+{
+  "name": "wesnoth-advisor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only board reader and combat calculator for advising on Battle for Wesnoth campaigns, built for Legend of the Invincibles.",
+  "scripts": {
+    "state": "bun src/cli.ts state",
+    "map": "bun src/cli.ts map",
+    "odds": "bun src/cli.ts odds",
+    "brief": "bun src/cli.ts brief",
+    "saves": "bun src/cli.ts saves",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  }
+}

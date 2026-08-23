@@ -1,0 +1,42 @@
+# Wesnoth Advisor
+
+A read-only toolkit for advising on a Battle for Wesnoth campaign, built for Legend of the Invincibles on the Steam build of Wesnoth 1.18.8.
+
+It never touches the game. It reads the newest savegame, the installed unit definitions and the campaign's own `.cfg` files, and answers questions about the board with the numbers the game is actually using.
+
+## Use
+
+```bash
+bun run state                      # newest save: turn, time of day, sides, every unit
+bun run state -- --map             # same, with the board drawn underneath
+bun run map -- --y=4-14            # just a window of the board
+bun run odds Delenia Gromar        # full exchange: hit chance, damage, kill probability
+bun run odds Efraim Grunt -- --backstab --turn=11
+bun run brief                      # the current scenario, decoded from the add-on source
+bun run saves                      # what saves exist, newest first
+```
+
+Unit arguments match on id, then name, then a substring of either, then unit type. `--save=<name>` picks a specific save instead of the newest.
+
+## What it reads
+
+| | |
+|---|---|
+| Saves | `~/.local/share/wesnoth/1.18/saves` |
+| Add-on | `~/.local/share/wesnoth/1.18/data/add-ons/Legend_of_the_Invincibles` |
+| Core data | the Steam install's `wesnoth/data` |
+
+Override with `WESNOTH_USERDATA` and `WESNOTH_CORE` if the install moves.
+
+## How it gets the numbers right
+
+A savegame stores each unit as a delta against its unit type, so a freshly recruited orc carries no attack, defence or resistance block at all. The reader falls back to the installed type definition and then replays the unit's own traits and equipped items over it, the same way the game does. Terrain defence comes from resolving each hex code through `terrain.cfg` to its base classes and taking the best one, which is Wesnoth's rule for composite terrain. Damage uses Wesnoth's own `round_damage` rounding, with time of day, backstab, charge and adjacent auras such as leadership and LotI's despair folded into one multiplier. The exchange is resolved as an exact probability tree over the strike sequence, so a defender that dies mid-combat stops retaliating.
+
+Nothing about units or terrain is hardcoded. If the add-on updates, the numbers follow.
+
+## Files
+
+- `ISA.md` is what "done" means for this repo, with the probe that would falsify each claim.
+- `DOCTRINE.md` is standing campaign doctrine, each rule traced to its source file.
+- `Briefings/` holds one file per scenario.
+- `CAMPAIGN.md` is the running log of the playthrough.
