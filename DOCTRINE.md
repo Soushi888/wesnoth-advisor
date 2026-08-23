@@ -54,6 +54,40 @@ Source: `WEAPON_SPECIAL_BACKSTAB` in `ADDON/units/Delly_start.cfg`.
 
 Source: `ABILITY_DESPAIR` in `ADDON/utils/abilities.cfg`, applied by `odds` in this repo.
 
+## Items are a system, not a pile of loot
+
+**The bag is always open.** Shift+I on any of your units, any turn, anywhere on the map. No keep, no village, no start-of-scenario window. There is no reason to ever be carrying unused items, so equip on turn 1 and again after every drop.
+
+Source: the item menu's only condition in `ADDON/utils/global_events.cfg` is that one of your units is standing there.
+
+**Armour makes you take less damage, it does not make you harder to hit.** An item's defence rating cuts blade and pierce damage by that percentage, and impact damage by about half that much, because hammers were always better at getting through plate. Fire, cold and arcane go straight through it untouched. Two pieces rated 10 stack to roughly a fifth off blade and pierce.
+
+So armour is worthless against a mage. Before deciding who wears the plate, ask what is actually going to kill that unit. If the answer is a fireball, give the plate to someone else.
+
+Source: `ADDON/lua/stats.lua`, lines 134 and 308 to 310. Note that a separate dodge rating, which some items carry, is the one that changes your chance to be hit.
+
+**Some weapons replace your damage, others add to it.** A weapon rated 20 overwrites what you had: on a four-strike attack it comes out as 8 per strike, whatever you were swinging before. A weapon that says plus 3 adds to your existing base instead. A helm or a ring that adds damage puts it on your melee weapon, not on everything you own.
+
+That is why Delenia's Twinkling Sword reads 8x4 and Efraim's Sword of Krux reads 7x4 on a saber that started at 4x4.
+
+Source: `ADDON/utils/item_list.cfg` compared against the resolved attacks in the savegame.
+
+**A weapon can have its own alignment, and it beats the unit's.** Efraim is neutral, but his sword fights as a lawful unit and his shadow wave fights as a chaotic one. At night that is a fifty point spread between his two attacks. Check the specials on an attack before assuming time of day does not apply to a neutral unit.
+
+Source: the specials on each item in `ADDON/utils/item_list.cfg`, shown by `bun run odds` in the square brackets after the weapon.
+
+**A glowing item is a curse at night.** Anything granting illuminates pushes every neighbouring hex twenty five points toward daylight. In a scenario locked at night that erases the entire bonus your chaotic army is fighting on and hands the lawful enemy its own back. The item is not bad, it is in the wrong scenario. Leave it in the bag until the map has a daylight schedule.
+
+Source: `ABILITY_ILLUMINATES_LOTI` in `ADDON/utils/abilities.cfg`, which is core illuminates at value 25.
+
+## Check whether the enemy is actually your enemy
+
+Several LotI scenarios open with the garrison on your own team and only turn hostile when a scripted event fires, usually when you walk somewhere specific. While that lasts you cannot be attacked, you can walk straight through their units, and you get to pick the turn the war starts. That is a free deployment phase and it is worth more than anything you can buy with the scenario's gold.
+
+Check it before planning: `bun run map` prints `hostile sides` on its last line, and it will say `none` when the truce is on.
+
+Source: `ADDON/scenarios1/02_The_Assassination.cfg`, where side 2 shares your team name until you step into Redain's chamber.
+
 ## Losing conditions are geography
 
 Several scenarios make an ally's death a defeat. That turns a friendly leader standing in the open into a liability you have to defend, not an asset. Read the `[event] name=last breath` blocks before planning a defensive line, which is what `bun run brief` prints under "scripted events".
