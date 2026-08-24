@@ -15,6 +15,19 @@ export interface Attack {
   parry: number;
 }
 
+export interface Detail {
+  id: string;
+  name: string;
+  description: string;
+}
+
+/** One item worn by a unit: the save carries its name, its slot and its catalogue number. */
+export interface Equipment {
+  name: string;
+  sort: string;
+  number: number;
+}
+
 export interface AbilityAura {
   tag: string;
   id: string;
@@ -51,18 +64,32 @@ export interface Unit {
   auras: AbilityAura[];
   traits: string[];
   items: string[];
+  /** Names and explanations for the traits above, as the save spells them out. */
+  traitDetails: Detail[];
+  abilityDetails: Detail[];
+  equipment: Equipment[];
   statuses: string[];
+  /** `full` or `loyal`; a loyal unit costs no upkeep. */
+  upkeep: string;
 }
 
 export interface Side {
   side: number;
+  /** The side's own name, e.g. "Efraim de Ceise". */
+  name: string;
   teamName: string;
   controller: string;
+  /** Wesnoth's flag colour for the side: red, blue, green, ... */
+  colour: string;
   gold: number;
   income: number;
   villageGold: number;
   recruits: string[];
   isPlayer: boolean;
+  /** Objectives text as the running game shows it, markup included. */
+  objectives: string;
+  /** Villages this side currently holds. */
+  villages: [number, number][];
 }
 
 export interface TimeOfDay {
@@ -204,14 +231,31 @@ function readUnit(n: WNode, experienceModifier: number): Unit {
 
   const mods = child(n, "modifications");
   const traits = mods ? children(mods, "trait").map((t) => clean(t.attrs["id"])) : [];
-  const items = mods
-    ? children(mods, "object")
-        .map((o) => clean(o.attrs["name"]))
-        .filter(Boolean)
+  const traitDetails: Detail[] = mods
+    ? children(mods, "trait").map((t) => ({
+        id: clean(t.attrs["id"]),
+        name: clean(t.attrs["name"]) || clean(t.attrs["male_name"]) || clean(t.attrs["id"]),
+        description: clean(t.attrs["description"]),
+      }))
     : [];
+  const equipment: Equipment[] = mods
+    ? children(mods, "object")
+        .filter((o) => clean(o.attrs["name"]))
+        .map((o) => ({
+          name: clean(o.attrs["name"]),
+          sort: clean(o.attrs["sort"]),
+          number: Number(clean(o.attrs["number"])) || 0,
+        }))
+    : [];
+  const items = equipment.map((e) => e.name);
 
   const abilitiesNode = child(n, "abilities");
   const abilities = abilitiesNode ? abilitiesNode.children.map((a) => clean(a.attrs["id"]) || a.tag) : [];
+  const abilityDetails: Detail[] = (abilitiesNode?.children ?? []).map((a) => ({
+    id: clean(a.attrs["id"]) || a.tag,
+    name: clean(a.attrs["name"]) || clean(a.attrs["female_name"]) || clean(a.attrs["id"]) || a.tag,
+    description: clean(a.attrs["description"]) || clean(a.attrs["special_note"]),
+  }));
   const auras: AbilityAura[] = (abilitiesNode?.children ?? [])
     .filter((a) => a.tag === "leadership" || a.attrs["value"] !== undefined)
     .map((a) => ({
@@ -265,7 +309,11 @@ function readUnit(n: WNode, experienceModifier: number): Unit {
     auras,
     traits,
     items,
+    traitDetails,
+    abilityDetails,
+    equipment,
     statuses,
+    upkeep: clean(n.attrs["upkeep"]) || "full",
   };
 }
 
@@ -292,13 +340,17 @@ export function loadBoard(nameOrPath?: string): Board {
 
   const sides: Side[] = children(ctx, "side").map((s) => ({
     side: num(s, "side"),
+    name: clean(s.attrs["side_name"]) || clean(s.attrs["name"]) || clean(s.attrs["id"]),
     teamName: clean(s.attrs["user_team_name"]) || clean(s.attrs["team_name"]),
     controller: s.attrs["controller"] ?? "?",
+    colour: clean(s.attrs["color"]) || "",
     gold: num(s, "gold"),
     income: num(s, "income"),
     villageGold: num(s, "village_gold", 1),
     recruits: (s.attrs["recruit"] ?? "").split(",").map((r) => r.trim()).filter(Boolean),
     isPlayer: s.attrs["controller"] === "human",
+    objectives: clean(s.attrs["objectives"]),
+    villages: children(s, "village").map((v) => [num(v, "x"), num(v, "y")] as [number, number]),
   }));
 
   const units: Unit[] = children(ctx, "side")

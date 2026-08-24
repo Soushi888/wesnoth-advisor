@@ -23,6 +23,12 @@ export interface MoveType {
 
 export interface UnitType {
   id: string;
+  /** `units/human-loyalists/spearman.png`, relative to an `images/` root. */
+  image: string;
+  /** The larger portrait, when the type declares one. */
+  profile: string;
+  /** The tree the type was read from, so its images resolve against the right `images/`. */
+  sourceRoot: string;
   level: number;
   hitpoints: number;
   experience: number;
@@ -97,15 +103,27 @@ function build() {
     } catch {
       continue;
     }
-    collect(root, types, moves);
+    collect(root, types, moves, imageRootFor(f, core, addons));
   }
 
   index = { types, moves };
   return index;
 }
 
+/**
+ * The tree whose `images/` directory a `.cfg`'s image paths resolve against: the
+ * add-on's own root for an add-on unit, the core data dir for everything else.
+ */
+function imageRootFor(file: string, core: string, addons: string): string {
+  if (file.startsWith(addons)) {
+    const rest = file.slice(addons.length).split("/").filter(Boolean);
+    if (rest[0]) return join(addons, rest[0]);
+  }
+  return core;
+}
+
 /** Unit types and movetypes can sit at any depth inside a campaign's `.cfg`. */
-function collect(n: WNode, types: Map<string, UnitType>, moves: Map<string, MoveType>) {
+function collect(n: WNode, types: Map<string, UnitType>, moves: Map<string, MoveType>, sourceRoot: string) {
   for (const c of n.children) {
     if (c.tag === "movetype") {
       const name = c.attrs["name"];
@@ -124,6 +142,9 @@ function collect(n: WNode, types: Map<string, UnitType>, moves: Map<string, Move
       if (id && !types.has(id)) {
         types.set(id, {
           id,
+          image: clean(c.attrs["image"]),
+          profile: clean(c.attrs["profile"]),
+          sourceRoot,
           level: Number(c.attrs["level"] ?? 1) || 1,
           hitpoints: Number(c.attrs["hitpoints"] ?? 1) || 1,
           experience: Number(c.attrs["experience"] ?? 0) || 0,
@@ -141,7 +162,7 @@ function collect(n: WNode, types: Map<string, UnitType>, moves: Map<string, Move
       }
       // Variations and nested types still need scanning.
     }
-    collect(c, types, moves);
+    collect(c, types, moves, sourceRoot);
   }
 }
 
@@ -175,6 +196,9 @@ export function lookupType(id: string, seen = new Set<string>()): ResolvedType |
     experience: t.experience || base?.experience || 0,
     movement: t.movement || base?.movement || 5,
     alignment: t.alignment || base?.alignment || "neutral",
+    image: t.image || base?.image || "",
+    profile: t.profile || base?.profile || "",
+    sourceRoot: t.image ? t.sourceRoot : (base?.sourceRoot ?? t.sourceRoot),
     movementType: t.movementType || base?.movementType || "",
     attacks: t.attacks.length ? t.attacks : (base?.attacks ?? []),
     abilities: t.abilities.length ? t.abilities : (base?.abilities ?? []),

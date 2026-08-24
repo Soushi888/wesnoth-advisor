@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/** Command line entry point: `state`, `map`, `odds`, `brief`, `saves`. */
+/** Command line entry point: `state`, `map`, `odds`, `brief`, `roster`, `report`, `dash`, `saves`. */
 
 import { listSaves } from "./paths";
 import { loadBoard, timeOnTurn, alignmentModifier, type Board, type Unit } from "./save";
@@ -8,6 +8,7 @@ import { computeExchange, hexAt } from "./odds";
 import { defenceOn, hexInfo } from "./terrain";
 import { briefScenario, difficultyFromSave } from "./brief";
 import { snapshots, casualties, debuts, scenarioDelta } from "./roster";
+import { startServer } from "./server";
 
 const args = process.argv.slice(2);
 const command = args[0] ?? "state";
@@ -330,8 +331,22 @@ try {
       showReport();
       break;
     }
+    case "dash":
+    case "dashboard": {
+      const port = Number(flagValue("port") ?? 4180);
+      const save = flagValue("save");
+      const running = startServer({ port, save });
+      const board = loadBoard(save);
+      console.log(`Wesnoth Advisor is watching the game.\n`);
+      console.log(`  open      ${running.url}`);
+      console.log(`  save      ${board.save.name}`);
+      console.log(`  scenario  ${board.scenarioName || board.scenarioId}, turn ${board.turn}/${board.turns}`);
+      console.log(`\nThe page follows the game on its own: end a turn, Wesnoth writes a save, the board turns over.`);
+      console.log(`Ctrl-C to stop.\n`);
+      break;
+    }
     default:
-      console.error(`unknown command "${command}". Try: state | map | odds | brief | roster | report | saves`);
+      console.error(`unknown command "${command}". Try: state | map | odds | brief | roster | report | dash | saves`);
       process.exit(1);
   }
 } catch (err) {

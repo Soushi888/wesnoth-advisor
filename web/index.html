@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wesnoth Advisor</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="banner">
+      <div class="banner-left">
+        <h1 id="scenario-name">reading the save</h1>
+        <div class="save-line"><span id="save-name">...</span><span class="dot" id="live-dot" title="waiting for the next save"></span><span id="live-text">connecting</span></div>
+      </div>
+      <div class="banner-right">
+        <button class="act bag-button" id="bag-button">The bag</button>
+        <div class="stat"><span class="stat-value" id="turn">-</span><span class="stat-label">turn</span></div>
+        <div class="stat"><span class="stat-value" id="tod">-</span><span class="stat-label" id="tod-effect">time of day</span></div>
+        <div class="stat"><span class="stat-value" id="gold">-</span><span class="stat-label">gold</span></div>
+        <div class="stat"><span class="stat-value" id="villages">-</span><span class="stat-label">villages</span></div>
+      </div>
+    </header>
+
+    <div class="changes" id="changes" hidden></div>
+
+    <main>
+      <section class="column left">
+        <div class="panel" id="sides-panel">
+          <h2>Sides</h2>
+          <div id="sides"></div>
+        </div>
+        <div class="panel grow" id="roster-panel">
+          <h2>Roster <span class="hint" id="roster-count"></span></h2>
+          <div class="roster" id="roster"></div>
+        </div>
+      </section>
+
+      <section class="column centre">
+        <div class="panel map-panel">
+          <div class="map-tools">
+            <h2>The board</h2>
+            <div class="map-buttons">
+              <button data-zoom="out" title="zoom out">-</button>
+              <button data-zoom="in" title="zoom in">+</button>
+              <button data-zoom="fit" title="fit the whole map">fit</button>
+              <label class="toggle"><input type="checkbox" id="show-names" /> names</label>
+            </div>
+          </div>
+          <div class="map-holder" id="map-holder"><svg id="map"></svg></div>
+          <div class="legend" id="legend"></div>
+        </div>
+      </section>
+
+      <section class="column right">
+        <div class="panel" id="detail-panel">
+          <h2 id="detail-title">Selection</h2>
+          <div id="detail" class="parchment">
+            <p class="empty">Click a unit or a hex. Select one of yours, then an enemy, to see the fight resolved.</p>
+          </div>
+        </div>
+        <div class="panel" id="odds-panel" hidden>
+          <h2>The exchange</h2>
+          <div id="odds" class="parchment"></div>
+        </div>
+        <div class="panel grow" id="objectives-panel">
+          <h2>Objectives</h2>
+          <div id="objectives" class="parchment small"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="overlay" id="overlay" hidden>
+      <div class="overlay-sheet parchment">
+        <div class="overlay-head">
+          <h3 id="overlay-title">The bag</h3>
+          <div class="overlay-tabs">
+            <button class="act" data-bag-tab="bag">In the bag</button>
+            <button class="act" data-bag-tab="worn">Worn</button>
+            <button class="act" id="overlay-close">close</button>
+          </div>
+        </div>
+        <div id="bag-content"></div>
+      </div>
+    </div>
+
+    <div class="tip" id="tip" hidden></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
