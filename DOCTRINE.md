@@ -66,11 +66,21 @@ So armour is worthless against a mage. Before deciding who wears the plate, ask 
 
 Source: `ADDON/lua/stats.lua`, lines 134 and 308 to 310. Note that a separate dodge rating, which some items carry, is the one that changes your chance to be hit.
 
-**Some weapons replace your damage, others add to it.** A weapon rated 20 overwrites what you had: on a four-strike attack it comes out as 8 per strike, whatever you were swinging before. A weapon that says plus 3 adds to your existing base instead. A helm or a ring that adds damage puts it on your melee weapon, not on everything you own.
+**A weapon's damage number is a percentage, not a rating.** An item saying `damage=20` gives **+20%** to that weapon slot. An item saying `damage_plus=3` adds a flat 3. The percentage touches only the slot the item sits in; a flat bonus from a helm or a ring lands on the unit's weapons generally. Percentage first, then the flat addition.
 
-That is why Delenia's Twinkling Sword reads 8x4 and Efraim's Sword of Krux reads 7x4 on a saber that started at 4x4.
+Worked example, every number confirmed against the savegame. Delenia's unit type gives her a **7x4** sword and a **6x3** knife. Twinkling Sword is `damage=20`, so 7 x 1.20 = 8.4 and she reads **8x4**. Add Virtual Void's `damage_plus=4` and it is 7 x 1.20 + 4 = 12.4, reading **12x4**, while her knife with no knife item is 6 + 4 = 10, reading **10x3**.
 
-Source: `ADDON/utils/item_list.cfg` compared against the resolved attacks in the savegame.
+The practical consequence: a big-looking `damage=40` is forty percent of a small base, and on a 6 damage knife that is worth two points a strike. **Do the arithmetic before deciding an item is exciting.** Read the base off the unit type, apply the percentage, then add the flat bonuses.
+
+Source: `ADDON/lua/stats.lua` lines 128, 200 to 212 and 267, where each weapon bonus starts at 100 and every item's `damage` is added to it before the total multiplies the base. Cross-checked against `ADDON/units/Delly_start.cfg`.
+
+**Items die with the unit carrying them.** There is no event that returns a fallen friendly unit's equipment to the bag. Aeraent went down in scenario 3 carrying Rherraent's Sword and Aran carrying a Heathenbasher, and the item storage lost exactly those two entries. So equipment concentrates where it will survive: on the units the scenario protects with loss conditions, never on a level 1 body you are willing to trade.
+
+Source: the only `die` handlers in `ADDON/utils/global_events.cfg` roll enemy drops and nothing else, plus the two matching disappearances from the ledger.
+
+**Identify an item by its number, never by its picture.** Two items can share a base image and differ only by an overlay. The savegame's item storage lists sort and number, and that is the answer.
+
+Source: mistook Exterminator's Knives (#804, a knife) for Exterminator's Dagger (#803) because both draw `items/dagger.png` and only a flip suffix separates them.
 
 **A weapon can have its own alignment, and it beats the unit's.** Efraim is neutral, but his sword fights as a lawful unit and his shadow wave fights as a chaotic one. At night that is a fifty point spread between his two attacks. Check the specials on an attack before assuming time of day does not apply to a neutral unit.
 
@@ -79,6 +89,16 @@ Source: the specials on each item in `ADDON/utils/item_list.cfg`, shown by `bun 
 **A glowing item is a curse at night.** Anything granting illuminates pushes every neighbouring hex twenty five points toward daylight. In a scenario locked at night that erases the entire bonus your chaotic army is fighting on and hands the lawful enemy its own back. The item is not bad, it is in the wrong scenario. Leave it in the bag until the map has a daylight schedule.
 
 Source: `ABILITY_ILLUMINATES_LOTI` in `ADDON/utils/abilities.cfg`, which is core illuminates at value 25.
+
+## Which hexes touch which
+
+Odd columns sit half a hex higher than even ones. So for a hex in an **even** column the two neighbours to its right are at `y` and `y+1`, and for a hex in an **odd** column they are at `y-1` and `y`. Getting the parity backwards is silent and poisonous: every hex still has six neighbours, they are just the wrong six, so every claim about chokepoints, dead ends, shelters and backstab pairs comes out plausible and wrong.
+
+Never work this out by hand. `adjacentHexes` in `src/save.ts` is the one place it is written down, `src/adjacency.test.ts` pins it against scenario 02, whose `moveto` trigger list happens to be exactly the six hexes around Lord Redain. If a new question needs adjacency, script it against that function.
+
+Source: found the hard way. The tool had the parities swapped, which silently mis-aimed every leadership and despair aura in `bun run odds`, and the same error propagated into a hand-drawn map analysis. Caught when a unit stood on a hex that had been declared sealed.
+
+**Backstab needs the hex directly opposite, which follows the same parity.** The three opposite pairs around a hex are north/south, north-east/south-west, and south-east/north-west. Compute them, do not eyeball them.
 
 ## Check whether the enemy is actually your enemy
 
