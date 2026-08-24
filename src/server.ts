@@ -14,7 +14,8 @@ import { loadBoard } from "./save";
 import { buildSnapshot, type Snapshot } from "./dashboard";
 import { computeExchange, type ExchangeOptions } from "./odds";
 import { lookupType } from "./unittypes";
-import { lookupItem } from "./items";
+import { lookupItem, lookupItemByName } from "./items";
+import { fallenLedger, type Ledger } from "./fallen";
 
 const WEB_DIR = join(import.meta.dir, "..", "web");
 const POLL_MS = 1500;
@@ -154,6 +155,10 @@ export function startServer(opts: ServerOptions = {}) {
         return json({ current: live.snapshot.save.name, dir: savesDir(), addons: addonsDir() });
       }
 
+      if (path === "/api/fallen") {
+        return json(fallen());
+      }
+
       if (path === "/api/odds") {
         const a = url.searchParams.get("attacker");
         const d = url.searchParams.get("defender");
@@ -251,6 +256,52 @@ export function startServer(opts: ServerOptions = {}) {
       server.stop(true);
     },
   };
+}
+
+/**
+ * The ledger reads every scenario-start save plus every autosave of the scenario
+ * in progress, so it is rebuilt only when the newest save changes, not per request.
+ */
+let ledgerCache: { stamp: string; ledger: LedgerView } | null = null;
+
+interface LedgerView extends Omit<Ledger, "past" | "current"> {
+  past: FallenView[];
+  current: FallenView[];
+}
+
+interface FallenView {
+  id: string;
+  name: string;
+  type: string;
+  level: number;
+  scenario: string;
+  lastSeenTurn: number | null;
+  lastSeenSave: string;
+  /** What went down with them, resolved against the add-on catalogue where it names the item. */
+  items: { name: string; icon: string; description: string; flavour: string; properties: { key: string; value: string }[] }[];
+}
+
+function fallen(): LedgerView {
+  const newest = newestPlayableSave();
+  const stamp = stampOf(newest);
+  if (ledgerCache?.stamp === stamp) return ledgerCache.ledger;
+  const raw = fallenLedger();
+  const dress = (f: Ledger["past"][number]): FallenView => ({
+    ...f,
+    items: f.items.map((name) => {
+      const def = lookupItemByName(name);
+      return {
+        name,
+        icon: def?.image ? `/img/item/${def.number}` : "",
+        description: def?.description ?? "",
+        flavour: def?.flavour ?? "",
+        properties: def?.properties ?? [],
+      };
+    }),
+  });
+  const ledger: LedgerView = { ...raw, past: raw.past.map(dress), current: raw.current.map(dress) };
+  ledgerCache = { stamp, ledger };
+  return ledger;
 }
 
 let clientBuild: { js: string; stamp: number } | null = null;

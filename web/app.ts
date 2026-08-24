@@ -546,7 +546,126 @@ function itemTile(item: ItemView): HTMLElement {
   return tile;
 }
 
-let bagTab: "bag" | "worn" = "bag";
+type Tab = "bag" | "worn" | "fallen";
+let bagTab: Tab = "bag";
+
+/** The ledger is its own fetch: it reads far more saves than one snapshot does. */
+interface FallenItem {
+  name: string;
+  icon: string;
+  description: string;
+  flavour: string;
+  properties: { key: string; value: string }[];
+}
+interface FallenView {
+  id: string;
+  name: string;
+  type: string;
+  level: number;
+  scenario: string;
+  lastSeenTurn: number | null;
+  lastSeenSave: string;
+  items: FallenItem[];
+}
+interface LedgerView {
+  past: FallenView[];
+  current: FallenView[];
+  currentScenario: string;
+  perScenario: { scenario: string; lost: number }[];
+  readSaves: number;
+}
+
+let ledger: LedgerView | null = null;
+
+async function loadLedger(): Promise<LedgerView | null> {
+  try {
+    const res = await fetch("/api/fallen");
+    ledger = (await res.json()) as LedgerView;
+  } catch {
+    ledger = null;
+  }
+  const total = ledger ? ledger.past.length + ledger.current.length : 0;
+  $("fallen-button").textContent = total ? `The fallen (${total})` : "The fallen";
+  return ledger;
+}
+
+function fallenRow(f: FallenView): HTMLElement {
+  const row = el("div", "fallen-row");
+  const who = el("div");
+  who.append(el("div", "name", `${f.name}`), el("div", "meta", `L${f.level} ${f.type}`));
+  const where = el("div", "meta");
+  where.textContent = f.lastSeenTurn === null ? f.scenario : `${f.scenario}, last alive on turn ${f.lastSeenTurn}`;
+  tip(row, {
+    title: `${f.name}, L${f.level} ${f.type}`,
+    body:
+      (f.lastSeenTurn === null
+        ? `Lost during ${f.scenario}. Reconstructed by diffing the roster against the next scenario's start.`
+        : `Lost during ${f.scenario}, alive at turn ${f.lastSeenTurn}.`) +
+      `\nLast save holding them alive: ${f.lastSeenSave}.` +
+      (f.items.length ? `\nEverything below went down with them.` : `\nCarrying nothing.`),
+  });
+
+  const carried = el("div", "chips");
+  if (!f.items.length) carried.append(el("span", "meta", "carrying nothing"));
+  for (const item of f.items) {
+    const chip = el("span", "chip item");
+    if (item.icon) {
+      const img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = "";
+      chip.append(img);
+    }
+    chip.append(document.createTextNode(item.name));
+    tip(chip, {
+      title: item.name,
+      body: [item.description, "Lost with the unit that carried it."].filter(Boolean).join("\n"),
+      props: item.properties.map((p) => `${p.key} ${p.value}`),
+      flavour: item.flavour || undefined,
+    });
+    carried.append(chip);
+  }
+
+  row.append(who, where, carried);
+  return row;
+}
+
+function renderFallen(host: HTMLElement) {
+  if (!ledger) {
+    host.append(el("p", "empty", "The ledger has not been read yet."));
+    return;
+  }
+  const total = ledger.past.length + ledger.current.length;
+  $("overlay-title").textContent = `The fallen: ${total} lost across the campaign`;
+
+  if (ledger.current.length) {
+    host.append(el("div", "bag-group", `${ledger.currentScenario}, in progress (${ledger.current.length})`));
+    for (const f of ledger.current) host.append(fallenRow(f));
+  }
+
+  const byScenario = new Map<string, FallenView[]>();
+  for (const f of ledger.past) {
+    const list = byScenario.get(f.scenario) ?? [];
+    list.push(f);
+    byScenario.set(f.scenario, list);
+  }
+  // Oldest scenario first, in the order the campaign was played.
+  for (const { scenario, lost } of ledger.perScenario) {
+    const list = byScenario.get(scenario);
+    if (!list?.length) continue;
+    host.append(el("div", "bag-group", `${scenario} (${lost})`));
+    for (const f of list) host.append(fallenRow(f));
+  }
+
+  if (!total) host.append(el("p", "empty", "Nobody has been lost yet."));
+
+  host.append(
+    el(
+      "p",
+      "note",
+      `Read from ${ledger.readSaves} saves. Finished scenarios are measured between scenario-start saves, so a unit recruited and killed inside one of them never appears. The scenario in progress is measured across its own autosaves, which does catch them.`,
+    ),
+  );
+}
 
 function renderBag() {
   const s = state.snapshot;
@@ -557,6 +676,11 @@ function renderBag() {
   document.querySelectorAll<HTMLButtonElement>("[data-bag-tab]").forEach((b) => {
     b.setAttribute("aria-pressed", String(b.dataset["bagTab"] === bagTab));
   });
+
+  if (bagTab === "fallen") {
+    renderFallen(host);
+    return;
+  }
 
   if (bagTab === "bag") {
     if (!s.bag.length) {
@@ -603,9 +727,10 @@ function renderBag() {
   }
 }
 
-function toggleBag(open?: boolean) {
+function toggleBag(open?: boolean, tab?: Tab) {
   const overlay = $("overlay");
   const next = open ?? overlay.hidden;
+  if (tab) bagTab = tab;
   overlay.hidden = !next;
   if (next) renderBag();
 }
@@ -1011,6 +1136,9 @@ async function load(initial = false) {
   if (state.target && !next.units.some((u) => u.id === state.target)) state.target = null;
   renderAll();
   renderLegend();
+  void loadLedger().then(() => {
+    if (!$("overlay").hidden && bagTab === "fallen") renderBag();
+  });
   if (!initial) renderChanges();
 }
 
@@ -1067,15 +1195,24 @@ function wireControls() {
   $("overlay").addEventListener("click", (e) => {
     if (e.target === $("overlay")) toggleBag(false);
   });
+  const fallenButton = $("fallen-button");
+  tip(fallenButton, {
+    title: "The fallen",
+    body: "Everyone lost across the campaign, in which scenario, and what they were carrying when they went down. Press f to open it.",
+  });
+  fallenButton.addEventListener("click", () => toggleBag(true, "fallen"));
+
   document.querySelectorAll<HTMLButtonElement>("[data-bag-tab]").forEach((b) => {
     b.addEventListener("click", () => {
-      bagTab = b.dataset["bagTab"] === "worn" ? "worn" : "bag";
+      const wanted = b.dataset["bagTab"];
+      bagTab = wanted === "worn" ? "worn" : wanted === "fallen" ? "fallen" : "bag";
       renderBag();
     });
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "b") toggleBag();
+    if (e.key === "b") toggleBag(undefined, "bag");
+    if (e.key === "f") toggleBag(true, "fallen");
     if (e.key === "Escape") {
       if (!$("overlay").hidden) {
         toggleBag(false);

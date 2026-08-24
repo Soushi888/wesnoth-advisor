@@ -101,6 +101,17 @@ export function lookupItem(number: number): ItemDef | undefined {
   return itemIndex().get(number);
 }
 
+let byName: Map<string, ItemDef> | null = null;
+
+/** A save spells a worn item out by name, so that is the only key a dead unit leaves behind. */
+export function lookupItemByName(name: string): ItemDef | undefined {
+  if (!byName) {
+    byName = new Map();
+    for (const item of itemIndex().values()) if (item.name && !byName.has(item.name)) byName.set(item.name, item);
+  }
+  return byName.get(name.trim());
+}
+
 export function itemCount(): number {
   return itemIndex().size;
 }

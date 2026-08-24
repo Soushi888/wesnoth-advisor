@@ -352,3 +352,17 @@ button.act[aria-pressed="true"] { background: var(--gold-dim); color: #1a1206; }
 .tip .tip-props { margin-top: 4px; color: #4a3a1e; }
 .tip .tip-flavour { margin-top: 5px; font-style: italic; color: #6b5836; }
 [data-tip] { cursor: help; }
+
+.fallen-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(150px, 1fr) minmax(180px, 2fr);
+  gap: 10px; align-items: center;
+  padding: 5px 6px; border-bottom: 1px dotted #b9a271;
+}
+.fallen-row:last-of-type { border-bottom: none; }
+.fallen-row .name { color: #6d2020; }
+.fallen-row .meta { font-size: 11px; color: #6b5836; }
+
+@media (max-width: 760px) {
+  .fallen-row { grid-template-columns: 1fr; gap: 2px; }
+}
