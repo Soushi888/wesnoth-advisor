@@ -23,7 +23,7 @@ Briefing: `Briefings/01-an-orcish-assault.md`. Won on turn 13 of 15.
 
 Briefing: `Briefings/02-the-assassination.md`.
 
-Briefing: `Briefings/02-the-assassination.md`. Won, with one unit list intact and the rare item recovered.
+Briefing: `Briefings/02-the-assassination.md`. Won, and the rare item recovered. Two Thieves lost, Rerungyan and Gaeran, which the roster diff turned up later; the read at the time was that nothing had been lost.
 
 - The scenario is a free deployment phase with a fight stapled on: side 2 shares your team name until someone steps into Redain's chamber. Nine units walked the whole castle at full health before a blow was struck.
 - The recruit list in the scenario header is a lie. A start event bans Fencer, Spearman, Bowman and Heavy Infantryman and allows Footpad and Thug, so everything buyable is chaotic. Recruiting Fencers here was never an option.
@@ -37,7 +37,7 @@ Briefing: `Briefings/02-the-assassination.md`. Won, with one unit list intact an
 
 Briefing: `Briefings/03-banished.md`. Planned before opening the scenario.
 
-Won. Expensive: **nine units lost** across the scenario.
+Won. Expensive: **nine units lost** across the scenario, confirmed by `bun run roster`.
 
 - The free phase worked exactly as planned. Twenty of thirty-two villages taken with nothing on the map able to interfere, and the trigger held off until turn 18.
 - What the plan got wrong was the second half. Eight of the twelve remaining villages sat behind the trigger box, so the build-up had nothing left to give well before turn 18, and the extra turns bought about six gold each while the army sat still.
@@ -47,7 +47,13 @@ Won. Expensive: **nine units lost** across the scenario.
 
 ## 04 Paradise Lost
 
-Briefing: `Briefings/04-paradise-lost.md`. Planned from the turn 1 board.
+Briefing: `Briefings/04-paradise-lost.md`. Report: `Reports/04-paradise-lost.md`. Won, six units lost, and Lethalia's company of seventeen elves joined permanently.
 
 - Key call: three orc camps, thirty-three and thirty-four apart, cannot be done in sequence in twenty-five turns. Kill Grub Drung first because he has one movement point and sits thirteen away, take his keep as a central recruiting base, then split into two columns.
 - Lethalia is a loss condition but the orcs are forced to 10% against her and two reinforcement events back her up before turn 8. Do not panic-march to save her.
+
+## 05 Shatter the Defilers
+
+Briefing: `Briefings/05-shatter-the-defilers.md`. Planned from the turn 1 board.
+
+- Key call: the three orc leaders are four and seven movement apart in one corner, seventy-four movement away, and their combined income is eight a turn. Delay costs nothing and buys everything, so march slowly, take the 47 villages, and arrive with the whole roster recalled.
