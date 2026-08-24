@@ -362,26 +362,32 @@ export function alignmentModifier(alignment: string, lawfulBonus: number): numbe
 
 
 /**
- * Wesnoth's hex adjacency (odd-q offset columns), matching `get_adjacent_tiles`.
+ * Wesnoth's hex adjacency, matching `get_adjacent_tiles`.
+ *
+ * Odd columns sit half a hex HIGHER than even ones, so an even column's
+ * diagonal neighbours are at y and y+1, and an odd column's are at y-1 and y.
+ * Getting this backwards is silent: every hex still has six neighbours, they
+ * are just the wrong six. The regression test pins it against scenario 02,
+ * whose `moveto` trigger list is exactly the six hexes around Redain.
  */
 export function adjacentHexes(x: number, y: number): [number, number][] {
   if (x % 2 === 0) {
     return [
       [x, y - 1],
-      [x + 1, y - 1],
       [x + 1, y],
+      [x + 1, y + 1],
       [x, y + 1],
+      [x - 1, y + 1],
       [x - 1, y],
-      [x - 1, y - 1],
     ];
   }
   return [
     [x, y - 1],
+    [x + 1, y - 1],
     [x + 1, y],
-    [x + 1, y + 1],
     [x, y + 1],
-    [x - 1, y + 1],
     [x - 1, y],
+    [x - 1, y - 1],
   ];
 }
 
