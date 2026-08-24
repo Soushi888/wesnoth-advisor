@@ -7,6 +7,7 @@ import { renderBoard } from "./render";
 import { computeExchange, hexAt } from "./odds";
 import { defenceOn, hexInfo } from "./terrain";
 import { briefScenario, difficultyFromSave } from "./brief";
+import { snapshots, casualties, debuts, scenarioDelta } from "./roster";
 
 const args = process.argv.slice(2);
 const command = args[0] ?? "state";
@@ -149,6 +150,118 @@ function showOdds(board: Board) {
   console.log(`  expected hp left ${defender.name}: ${ex.expectedDefenderHp.toFixed(1)}   ${attacker.name}: ${ex.expectedAttackerHp.toFixed(1)}`);
 }
 
+function showRoster() {
+  const sinceRaw = flagValue("since");
+  const since = sinceRaw ? new Date(sinceRaw) : undefined;
+  const snaps = snapshots(since);
+  if (snaps.length === 0) {
+    console.log("No scenario-start saves found. Nothing to reconstruct from.");
+    return;
+  }
+  const dead = casualties(snaps);
+  const firstSeen = debuts(snaps);
+  const current = snaps[snaps.length - 1]!;
+
+  console.log(`run       ${snaps[0]!.save.mtime.toISOString().slice(0, 10)} to ${current.save.mtime.toISOString().slice(0, 10)}`);
+  console.log(`scenarios ${snaps.map((s) => s.scenarioName).join(" -> ")}`);
+  console.log(`standing  ${current.units.size} alive, ${dead.length} lost\n`);
+
+  console.log(`serving (${current.units.size}), best first`);
+  const alive = [...current.units.values()].sort((a, b) => b.level - a.level || b.xp - a.xp);
+  for (const u of alive) {
+    console.log(
+      `  L${u.level} ${u.name.padEnd(18).slice(0, 18)} ${u.type.padEnd(20).slice(0, 20)}` +
+        ` ${String(u.xp).padStart(3)}/${String(u.maxXp).padEnd(3)} xp` +
+        `  since ${(firstSeen.get(u.name) ?? "?").padEnd(20).slice(0, 20)}` +
+        (u.loyal ? " loyal" : "      ") +
+        (u.items.length ? `  [${u.items.join(", ")}]` : ""),
+    );
+  }
+
+  console.log(`\nfallen (${dead.length})`);
+  if (dead.length === 0) {
+    console.log("  nobody yet");
+  } else {
+    for (const c of dead) {
+      console.log(
+        `  L${c.level} ${c.name.padEnd(18).slice(0, 18)} ${c.type.padEnd(20).slice(0, 20)}` +
+          `  lost in ${c.lostIn}` +
+          (c.items.length ? `  carrying [${c.items.join(", ")}]` : ""),
+      );
+    }
+  }
+
+  const perScenario = new Map<string, number>();
+  for (const c of dead) perScenario.set(c.lostIn, (perScenario.get(c.lostIn) ?? 0) + 1);
+  console.log("\nlosses per scenario");
+  for (const s of snaps) console.log(`  ${s.scenarioName.padEnd(24)} ${perScenario.get(s.scenarioName) ?? 0}`);
+
+  console.log(
+    "\nReconstructed by diffing consecutive scenario-start saves, so a unit recruited\n" +
+      "and killed inside one scenario never appears here. Items listed against a fallen\n" +
+      "unit went down with them and are gone.",
+  );
+}
+
+/** Measured facts for an after-action report: what a scenario cost and what it earned. */
+function showReport() {
+  const snaps = snapshots();
+  if (snaps.length < 2) {
+    console.log("Need at least two scenario-start saves to measure a scenario. Finish one first.");
+    return;
+  }
+  const wanted = positional[0]?.toLowerCase();
+  const indices = wanted
+    ? snaps.map((s, i) => [s, i] as const).filter(([s]) => s.scenarioName.toLowerCase().includes(wanted)).map(([, i]) => i)
+    : [snaps.length - 2];
+  if (indices.length === 0) {
+    console.error(`No finished scenario matching "${positional[0]}". Known: ${snaps.slice(0, -1).map((s) => s.scenarioName).join(", ")}`);
+    process.exit(1);
+  }
+
+  for (const i of indices) {
+    const d = scenarioDelta(snaps, i);
+    if (!d) {
+      console.log(`${snaps[i]!.scenarioName} is still in progress, nothing to measure yet.`);
+      continue;
+    }
+    console.log(`\n${"=".repeat(58)}\n${d.scenario}\n${"=".repeat(58)}`);
+    console.log(`carryover ${d.goldStart} came in, ${d.goldNext} went out. Wesnoth adds the scenario\u0027s own gold on top of this, so the figure on the board is higher.`);
+    console.log(`roster    ${snaps[i]!.units.size} -> ${snaps[i + 1]!.units.size}   lost ${d.lost.length}, joined ${d.joined.length}`);
+
+    console.log(`\nlost (${d.lost.length})`);
+    if (d.lost.length === 0) console.log("  nobody");
+    for (const c of d.lost) {
+      console.log(`  L${c.level} ${c.name.padEnd(16).slice(0, 16)} ${c.type.padEnd(20).slice(0, 20)}${c.items.length ? `  carrying [${c.items.join(", ")}]` : ""}`);
+    }
+
+    console.log(`\nlevelled (${d.levelled.length})`);
+    if (d.levelled.length === 0) console.log("  nobody");
+    for (const l of d.levelled) console.log(`  ${l.name.padEnd(16).slice(0, 16)} L${l.from} -> L${l.to}  ${l.type}`);
+
+    const top = d.xpGained.slice(0, 8);
+    if (top.length) {
+      console.log("\nexperience gained, most first");
+      for (const x of top) console.log(`  ${x.name.padEnd(16).slice(0, 16)} +${x.gained}`);
+    }
+
+    console.log(`\njoined (${d.joined.length})`);
+    if (d.joined.length === 0) console.log("  nobody");
+    for (const u of d.joined) console.log(`  L${u.level} ${u.name.padEnd(16).slice(0, 16)} ${u.type}`);
+
+    console.log("\nitems into the bag");
+    console.log(d.itemsGained.length ? d.itemsGained.map((i) => `  + ${i}`).join("\n") : "  none");
+    console.log("items out of the bag (equipped, or lost with a unit)");
+    console.log(d.itemsLost.length ? d.itemsLost.map((i) => `  - ${i}`).join("\n") : "  none");
+  }
+
+  console.log(
+    "\nMeasured by diffing scenario-start saves. A unit recruited and killed inside\n" +
+      "one scenario is invisible here, and an item leaving the bag may have been\n" +
+      "equipped rather than lost, so check against the roster before writing it up.",
+  );
+}
+
 function showBrief(board: Board) {
   const id = positional[0] ?? board.scenarioId;
   const difficulty = difficultyFromSave(board.save.path);
@@ -209,8 +322,16 @@ try {
       showBrief(loadBoard(flagValue("save")));
       break;
     }
+    case "roster": {
+      showRoster();
+      break;
+    }
+    case "report": {
+      showReport();
+      break;
+    }
     default:
-      console.error(`unknown command "${command}". Try: state | map | odds | brief | saves`);
+      console.error(`unknown command "${command}". Try: state | map | odds | brief | roster | report | saves`);
       process.exit(1);
   }
 } catch (err) {

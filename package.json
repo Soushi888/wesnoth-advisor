@@ -10,7 +10,9 @@
     "odds": "bun src/cli.ts odds",
     "brief": "bun src/cli.ts brief",
     "saves": "bun src/cli.ts saves",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "roster": "bun src/cli.ts roster",
+    "report": "bun src/cli.ts report"
   },
   "devDependencies": {
     "@types/bun": "latest",
