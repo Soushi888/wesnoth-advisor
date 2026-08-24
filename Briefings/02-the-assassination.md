@@ -26,16 +26,16 @@ All of them. There is nothing hidden behind the fog and no reinforcements are co
 
 | Who | What | HP | Where | Ways out of that hex |
 |---|---|---|---|---|
-| Lord Redain | General | 63 | (2,6) | 5 |
+| Lord Redain | General | 63 | (2,6) | 6 |
 | Vugthynaent | Royal Guard | 81 | (1,6) | 3, he is Redain's bodyguard |
-| Buroc | Royal Guard | 82 | (11,9) | **1**, a dead-end alcove |
-| Gloraevan | Royal Guard | 81 | (17,9) | **1**, a dead-end alcove |
-| Vobreddec | Royal Guard | 71 | (11,1) | 5 |
+| Buroc | Royal Guard | 82 | (11,9) | 2, a narrow alcove |
+| Gloraevan | Royal Guard | 81 | (17,9) | 2, a narrow alcove |
+| Vobreddec | Royal Guard | 71 | (11,1) | 3 |
 | Garalyn | Halberdier | 79 | (11,7) | 2 |
-| Anyc | Halberdier | 73 | (17,3) | 5 |
-| Lyryn | Silver Mage | 55 | (20,9) | 4 |
-| Vegwylyn | Javelineer | 54 | (1,1) | 3 |
-| Vinogyc | Javelineer | 46 | (21,1) | 3, and he is standing on a treasure |
+| Anyc | Halberdier | 73 | (17,3) | 3 |
+| Lyryn | Silver Mage | 55 | (20,9) | 2 |
+| Vegwylyn | Javelineer | 54 | (1,1) | 2 |
+| Vinogyc | Javelineer | 46 | (21,1) | 2, and he is standing on a treasure |
 
 None of them resists anything. Blade, pierce, impact, fire and cold all land at full strength, arcane at 90%. So use whatever hits hardest and stop thinking about damage types against this garrison.
 
@@ -59,23 +59,25 @@ Thief 13, Thug 13, Footpad 14, Rogue 25, recall 20.
 
 ## The ground
 
-**There is one door.** The wall across the middle of the map has exactly one gap, at **(14,10)**. Everything that comes at you comes through that hex. Inside it opens onto (13,9), (14,9) and (15,9); outside, onto (14,11).
+**There is one door.** The wall across the middle of the map has exactly one gap, at **(14,10)**. On the fortress side it touches a single hex, (14,9); on your side it opens onto (13,11), (14,11) and (15,11). Everything that comes at you comes through it, single file.
 
-**Behind the door is a killing floor.** Two keeps sit at (14,11) and (14,12) with castle hexes around them. Anything standing on (14,11) can only be reached from the door itself, one attacker at a time. Anything that pushes on to (14,12) can be surrounded by five of your units. This is where you want the fight, not inside the castle.
+**Behind the door is a killing floor.** Two keeps sit at (14,11) and (14,12) with castle hexes around them, and both are six-sided open ground. The chokepoint is the door itself: only one enemy can stand on (14,10), and the three hexes on your side, (13,11), (14,11) and (15,11), all touch it. Hold those three and whatever steps out is fighting three of you at once. This is where you want the fight, not inside the castle.
 
-**Redain's chamber has one blind spot.** He has five open hexes around him, and four of them wake him up. **(3,5) does not.** You can put a unit on his shoulder and he will keep talking to you as if nothing is happening.
+**Redain's chamber has no blind spot.** He sits at (2,6) and all six hexes around him, (2,5), (2,7), (3,6), (3,7), (1,6) and (1,7), are exactly the six that wake him. That is not a coincidence: the scenario's trigger list *is* his neighbour list. There is nowhere to stand next to him quietly.
 
-**Backstab needs the hex directly opposite.** Across Redain that means:
+**Backstab pairs across Redain.** Three genuinely opposite pairs, two of them usable:
 
 | Pair | Can you use it |
 |---|---|
-| (2,5) and (2,7) | Yes, both empty |
-| (3,5) and (1,6) | Only once Vugthynaent is off (1,6) |
-| (3,6) and (1,5) | Never, (1,5) is solid rock |
+| (2,5) and (2,7) | Yes |
+| (3,6) and (1,7) | Yes |
+| (3,7) and (1,6) | Only once Vugthynaent is off (1,6) |
 
-**The chamber has one entrance,** through **(4,6)** and **(4,7)**. Tempting as it looks, do not try to hold that doorway: Redain and his bodyguard would be behind you, so you would be taking hits from five directions instead of two.
+So you can land **four** backstabs on him at once, not two.
 
-**Two guards trap themselves.** Buroc at (11,9) and Gloraevan at (17,9) sit in alcoves with a single way out. One unit on (12,9) or (16,9) corks each of them for the rest of the scenario. Only do it with a body you are willing to lose, because a corked Royal Guard can still swing at whoever is corking him.
+**Two guards start in two-exit corridors.** Buroc at (11,9) can only leave via (12,8) or (12,9); Gloraevan at (17,9) via (16,8) or (16,9). Not sealable by one body, but slow to deploy.
+
+**Shelter for a fragile unit.** Only two hexes on this map have a single entrance: **(9,9)**, entered from (8,8), and **(17,1)**, entered from (18,1). Put Mario on one and a body on its entrance and he cannot be attacked at all.
 
 **Every village is outside the castle:** (11,12), (17,12), (10,13), (17,13), (10,15), (5,16), (14,16) and (20,16). Eight of them, one gold each. They are your only healing and the only thing that cures poison. The garrison has none, which matters more than it sounds.
 
