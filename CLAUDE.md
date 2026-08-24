@@ -18,7 +18,8 @@ bun run odds Delenia Gromar      # full exchange: hit chance, damage, kill proba
 bun run odds Efraim Grunt -- --backstab --turn=11 --from=12,7 --attack=sword
 bun run brief                    # current scenario decoded from add-on source at the save's difficulty
 bun run saves                    # saves, newest first, replays flagged
-bun run typecheck                # tsc --noEmit
+bun run dash                     # live browser dashboard on 127.0.0.1:4180, follows the game turn by turn
+bun run typecheck                # tsc --noEmit for src, then for web
 ```
 
 Any command takes `--save=<name-or-path>` to pick a save other than the newest playable one. Unit arguments resolve by exact id, then exact name, then substring of name, id, or type. There is no test suite: verification is hand-checking tool output against the raw WML, which is how both real defects so far were found.
@@ -43,11 +44,17 @@ One data flow, bottom up:
 
 `brief.ts` reads the scenario `.cfg` straight from the add-on, strips the `#ifdef EASY/NORMAL/HARD` branches that do not apply, and picks the right slot out of difficulty macros like `{TURNS 16 15 13}`. Difficulty comes from the save, not from a flag.
 
-`render.ts` draws the board. `cli.ts` is the only entry point and the only place that formats output.
+`items.ts` indexes LotI's `utils/item_list.cfg` by item number, which is the only way to name what sits in the bag: `item_storage` stores a sort and a number and nothing else. A worn item is different, because the save spells out its name in the unit's `[object]` block.
+
+`gameconfig.ts` reads `data/game_config.cfg` for the engine's constants (base income, village support, poison amount, recall cost), so the upkeep and income arithmetic on screen is read rather than remembered.
+
+`render.ts` draws the ASCII board. `cli.ts` is the only entry point and the only place that formats terminal output.
+
+`dashboard.ts` and `server.ts` are the browser companion. `dashboard.ts` builds one JSON snapshot per save by arranging what the modules above resolve, and computes nothing of its own; `server.ts` serves that snapshot, an odds route that calls the same `computeExchange` the CLI calls, unit sprites and item icons read out of the game trees, and a server-sent event stream. It polls the saves directory every 1.5s because Wesnoth writes a save as a rename over the path, which `fs.watch` misses. The client is `web/app.ts`, plain TypeScript bundled on demand by `Bun.build`, with its own tsconfig so it typechecks against DOM types.
 
 ## Constraints that must hold
 
-- **Read-only.** No `writeFile`, `mkdir`, `unlink` or `Bun.write` anywhere under `src/`, and nothing under the Wesnoth user dir or the Steam install is touched. `ISA.md` anti-claim A1 is the falsifier.
+- **Read-only.** This includes the server: it binds to `127.0.0.1`, every route reads, and image paths are resolved under a game root or refused. No `writeFile`, `mkdir`, `unlink` or `Bun.write` anywhere under `src/`, and nothing under the Wesnoth user dir or the Steam install is touched. `ISA.md` anti-claim A1 is the falsifier.
 - **No hardcoded unit or terrain statistics.** Every number comes from the save, the type definitions, `terrain.cfg` or the scenario source. The only numeric literals in lookup paths are absence fallbacks (resistance 100, defence 50%). If the add-on updates, the numbers follow.
 - **Never state a board fact that did not come from a named save.** Print the save name in the header of anything that reports state.
 - Strict TypeScript with `noUncheckedIndexedAccess`; index access needs `!` or a guard.
@@ -56,4 +63,4 @@ One data flow, bottom up:
 
 When a claim about the game turns out to be wrong, fix the rule where it lives and cite the file it came from: `DOCTRINE.md` for standing rules, the scenario's `Briefings/` file for scenario numbers, `CAMPAIGN.md` for what actually happened. Doctrine entries carry a `CORE/` or `ADDON/` path, not a memory.
 
-`ISA.md` is the state of record. Its "Not yet specified" section is the real backlog: item name resolution from `ADDON/utils/item_list.cfg`, and reachability flood fill over the movement tables.
+`ISA.md` is the state of record. Its "Not yet specified" section is the real backlog: reachability flood fill over the movement tables is the open one.

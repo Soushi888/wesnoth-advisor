@@ -17,9 +17,18 @@ bun run roster                     # who is serving, who was lost, and in which 
 bun run report                     # what the last finished scenario cost and earned
 bun run report Banished            # the same, for a named scenario
 bun run saves                      # what saves exist, newest first
+bun run dash                       # the live dashboard, in a browser, following the game
 ```
 
 Unit arguments match on id, then name, then a substring of either, then unit type. `--save=<name>` picks a specific save instead of the newest.
+
+## The dashboard
+
+`bun run dash` serves a companion board at `http://127.0.0.1:4180`. It reads the newest save, draws the whole map with the game's own unit sprites, and then follows the game on its own: end a turn in Wesnoth, the save lands, and the page turns over within a couple of seconds without a reload, telling you what changed since the last one.
+
+What is on it: every side's gold, income and villages with the upkeep arithmetic spelled out; the full roster with hitpoints, experience and position; a unit sheet with attacks, resistances, traits, abilities and everything the unit carries; the exchange resolved against anyone standing next to the selected unit, with the same numbers `bun run odds` prints; the shared bag and every worn item, resolved by name out of the add-on's own catalogue; and the scenario's objectives. Anything the game explains in its own words carries a tooltip that says so.
+
+`--port=NNNN` moves it, `--save=<name>` pins it to one save instead of following the newest. It binds to loopback and writes nothing, like the rest of the kit.
 
 ## The two workflows
 
